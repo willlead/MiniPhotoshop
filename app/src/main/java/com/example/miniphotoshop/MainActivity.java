@@ -24,13 +24,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 //
 public class MainActivity extends AppCompatActivity {
-    final static int SAVE = 1, LOAD = 2;
+    final static int SAVE = 0, LOAD = 1;
     private DrawView mDrawView;
     public static float mStrokeWidth = 5;
     public static int mStrokeColor = Color.BLACK;
@@ -62,13 +65,46 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case SAVE:
-                savePicture();
+                //savePicture();
+                saveData();
+                break;
             case LOAD:
-                loadPicture();
+                //loadPicture();
+                loadData();
+                break;
         }
         return super.onOptionsItemSelected(item);
     }
 
+    //https://hrhdev.tistory.com/134
+    private  void saveData(){
+        try{
+            FileOutputStream fos = openFileOutput("picture.txt",Context.MODE_PRIVATE);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(mDrawView.pointList);
+            oos.close();
+            Toast.makeText(this, "저장  성공", Toast.LENGTH_SHORT).show();
+
+        }catch (Exception e){
+            Log.e("canvas",e.getMessage());
+            Toast.makeText(this,"저장 실패", Toast.LENGTH_SHORT).show();
+        }
+    }
+    private void loadData() {
+        try{
+            FileInputStream fis = openFileInput("picture.txt");
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            ArrayList<DrawView.Point> readObject = (ArrayList<DrawView.Point>)ois.readObject();
+            mDrawView.pointList = readObject;
+            mDrawView.invalidate();
+            Toast.makeText(this, "불러오기 성공", Toast.LENGTH_SHORT).show();
+        }catch (Exception e){
+            Log.i("canvas",e.getMessage());
+            Toast.makeText(this, "불러오기 실패", Toast.LENGTH_SHORT).show();
+        }
+
+
+    }
     private void loadPicture() {
         
 //        Intent intent = new Intent();
@@ -85,6 +121,31 @@ public class MainActivity extends AppCompatActivity {
             mDrawView.draw(new Canvas(bm));
         } catch (Exception e) {
             Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+
+    private void savePicture() {
+
+
+        mDrawView.setDrawingCacheEnabled(true);
+        Bitmap screenshot = Bitmap.createBitmap(mDrawView.getDrawingCache());
+        mDrawView.setDrawingCacheEnabled(false);
+
+        File dir = Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES);
+        if (!dir.exists())
+            dir.mkdirs();
+        FileOutputStream fos;
+        try {
+            fos = new FileOutputStream(new File(dir, "my.png"));
+            screenshot.compress(CompressFormat.PNG, 100, fos);
+            fos.close();
+            Toast.makeText(this, "저장 성공", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e("canvas", "그림저장오류", e);
+            Toast.makeText(this, "저장 실패", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -107,29 +168,6 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             }
-        }
-    }
-
-    private void savePicture() {
-
-
-        mDrawView.setDrawingCacheEnabled(true);
-        Bitmap screenshot = Bitmap.createBitmap(mDrawView.getDrawingCache());
-        mDrawView.setDrawingCacheEnabled(false);
-
-        File dir = Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES);
-        if (!dir.exists())
-            dir.mkdirs();
-        FileOutputStream fos;
-        try {
-            fos = new FileOutputStream(new File(dir, "my.png"));
-            screenshot.compress(CompressFormat.PNG, 100, fos);
-            fos.close();
-            Toast.makeText(this, "저장 성공", Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            Log.e("canvas", "그림저장오류", e);
-            Toast.makeText(this, "저장 실패", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -180,7 +218,7 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }//end class DrawView
 
-        static class Point  {
+        static class Point  implements Serializable{
             float x, y;
             boolean draw;
             float mStrokeWidth;
