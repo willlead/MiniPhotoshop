@@ -1,4 +1,5 @@
 package com.example.miniphotoshop;
+
 import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -44,15 +45,17 @@ import static java.lang.System.exit;
 //
 public class MainActivity extends AppCompatActivity {
 
-    final static int SAVE = 0, LOAD = 1, POST = 2;
+    final static int SAVE = 0, LOAD = 1, POST_SUCCESS = 2,  POST_FAILURE = 3;
     private final String SERVER_URL = "http://jang.anymobi.kr/android/myinfo.php";
 
     private DrawView mDrawView;
     public static float mStrokeWidth = 5;
     public static int mStrokeColor = Color.BLACK;
     public static int mBackColor = Color.WHITE;
+    boolean isLoad = false;
     String myName = "윤성렬";
     int myAge = 34;
+    String filename;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,9 +74,10 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        menu.add(0, SAVE, 0, "Save Canvas");
-        menu.add(0, LOAD, 0, "Load Canvas");
-        menu.add(0, POST, 0, "Post");
+        menu.add(0, SAVE, 0, "Save").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        menu.add(0, LOAD, 0, "Load").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        menu.add(0, POST_SUCCESS, 0, "Post_Success");
+        menu.add(0, POST_FAILURE, 0, "Post_Failure");
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -81,17 +85,27 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case SAVE:
-                //savePicture();
-                saveData();
+                savePicture();
+//                saveData();
                 break;
             case LOAD:
-                //loadPicture();
-                loadData();
-            case POST:
+                loadPicture();
+
+//                loadData();
+                break;
+            case POST_SUCCESS:
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        postData();
+                        postData(true);
+                    }
+                }).start();
+                break;
+            case POST_FAILURE:
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        postData(false);
                     }
                 }).start();
                 break;
@@ -100,8 +114,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    void postData() {
-        String requestPOST = SERVER_URL + "?name=" +myName;//+ "&" + "age=" + myAge;
+    void postData(boolean isSuccess) {
+        String requestPOST;
+        if (isSuccess) {
+            requestPOST = SERVER_URL + "?name=" + myName + "&" + "age=" + myAge;
+        } else {
+            requestPOST = SERVER_URL + "?name=" + myName;//+ "&" + "age=" + myAge;}
+        }
         URL url = null;
         BufferedReader input = null;
         String line = "";
@@ -161,48 +180,53 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private  void saveData(){
-        try{
-            FileOutputStream fos = openFileOutput("picture.txt",Context.MODE_PRIVATE);
+    private void saveData() {
+        try {
+            FileOutputStream fos = openFileOutput("picture.txt", Context.MODE_PRIVATE);
             ObjectOutputStream oos = new ObjectOutputStream(fos);
             oos.writeObject(mDrawView.pointList);
             oos.close();
             Toast.makeText(this, "저장  성공", Toast.LENGTH_SHORT).show();
 
-        }catch (Exception e){
-            Log.e("canvas",e.getMessage());
-            Toast.makeText(this,"저장 실패", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e("canvas", e.getMessage());
+            Toast.makeText(this, "저장 실패", Toast.LENGTH_SHORT).show();
         }
     }
+
     private void loadData() {
-        try{
+        try {
             FileInputStream fis = openFileInput("picture.txt");
             ObjectInputStream ois = new ObjectInputStream(fis);
-            ArrayList<DrawView.Point> readObject = (ArrayList<DrawView.Point>)ois.readObject();
+            ArrayList<DrawView.Point> readObject = (ArrayList<DrawView.Point>) ois.readObject();
             mDrawView.pointList = readObject;
             mDrawView.invalidate();
             Toast.makeText(this, "불러오기 성공", Toast.LENGTH_SHORT).show();
-        }catch (Exception e){
-            Log.i("canvas",e.getMessage());
+        } catch (Exception e) {
+            Log.i("canvas", e.getMessage());
             Toast.makeText(this, "불러오기 실패", Toast.LENGTH_SHORT).show();
         }
 
 
     }
+
     private void loadPicture() {
-        
+
 //        Intent intent = new Intent();
 //        intent.setType("image/*");
 //        intent.setAction(Intent.ACTION_GET_CONTENT);
 //        startActivityForResult(intent, 1);
-
+        isLoad = true;
         File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-        String filename = dir + "/my.png";
-        Bitmap bm = BitmapFactory.decodeFile(filename).copy(Bitmap.Config.ARGB_8888, true);
+        filename = dir + "/my.png";
+//        Bitmap bm = BitmapFactory.decodeFile(filename).copy(Bitmap.Config.ARGB_8888, true);
         Log.d("canvas", dir + "/my.png");
         try {
             Toast.makeText(this, "불러오기 성공", Toast.LENGTH_SHORT).show();
-            mDrawView.draw(new Canvas(bm));
+            mDrawView.pointList.clear();
+            mDrawView.setFilename(filename);
+            mDrawView.isLoadBitmap = true;
+            mDrawView.invalidate();
         } catch (Exception e) {
             Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
         }
@@ -235,18 +259,18 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data
         );
-        if(requestCode == 1){
-            if(resultCode == RESULT_OK){
-                try{
+        if (requestCode == 1) {
+            if (resultCode == RESULT_OK) {
+                try {
                     InputStream in = getContentResolver().openInputStream(data.getData());
                     Bitmap bm = BitmapFactory.decodeStream(in);
                     in.close();
                     String path = data.getDataString();
-                    Log.i("canvas",path);
+                    Log.i("canvas", path);
                     Toast.makeText(this, path, Toast.LENGTH_SHORT).show();
 //                    String fileName = "/"+System.currentTimeMillis()+".png";
 //                    mDrawView.draw(new Canvas(bm));
-                }catch (Exception e){
+                } catch (Exception e) {
                     Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             }
@@ -254,12 +278,36 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private static class DrawView extends View implements View.OnTouchListener {
+
         float x, y;
+        boolean isLoadBitmap = false;
         public ArrayList<Point> pointList = new ArrayList<MainActivity.DrawView.Point>();
+        private String filename;
+
         public DrawView(Context context) {
             super(context);
             setOnTouchListener(this);
             setFocusableInTouchMode(true);
+        }
+
+        public void setFilename(String filename){
+            this.filename = filename;
+        }
+
+        void loadBitmap(Canvas canvas){
+            try {
+                if(filename == null) return;
+                Bitmap bm = BitmapFactory.decodeFile(filename);
+                if(bm == null) Log.i("canvas","bm is null"+ filename);
+                Paint paint = new Paint();
+                paint.setColor(mStrokeColor);
+                paint.setStrokeWidth(mStrokeWidth);
+                canvas.drawBitmap(bm, 0, 0, paint);
+                bm.recycle();
+            } catch (Exception e){
+                Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+
         }
 
         @Override
@@ -267,16 +315,26 @@ public class MainActivity extends AppCompatActivity {
             super.onDraw(canvas);
             canvas.drawColor(mBackColor);
             Paint paint = new Paint();
-            if (pointList.size() < 2) return;
-            for (int i = 1; i < pointList.size(); i++) {
-                if (pointList.get(i).draw) {
-                    paint.setColor(pointList.get(i).mStrokeColor);
-                    paint.setStrokeWidth(pointList.get(i).mStrokeWidth);
-                    canvas.drawLine(pointList.get(i - 1).x,
-                            pointList.get(i - 1).y, pointList.get(i).x,
-                            pointList.get(i).y, paint);
+
+            if(isLoadBitmap){
+                loadBitmap(canvas);
+                isLoadBitmap = false;
+            } else {
+//                loadBitmap(canvas);// 보류 테스 중
+                if (pointList.size() < 2) {
+                    return;
+                }
+                for (int i = 1; i < pointList.size(); i++) {
+                    if (pointList.get(i).draw) {
+                        paint.setColor(pointList.get(i).mStrokeColor);
+                        paint.setStrokeWidth(pointList.get(i).mStrokeWidth);
+                        canvas.drawLine(pointList.get(i - 1).x,
+                                pointList.get(i - 1).y, pointList.get(i).x,
+                                pointList.get(i).y, paint);
+                    }
                 }
             }
+
         }
 
         @Override
@@ -300,11 +358,12 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }//end class DrawView
 
-        static class Point  implements Serializable{
+        static class Point implements Serializable {
             float x, y;
             boolean draw;
             float mStrokeWidth;
             int mStrokeColor;
+
             public Point(float x, float y, boolean draw, float mStrokeWidth, int mStrokeColor) {
                 this.x = x;
                 this.y = y;
