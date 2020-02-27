@@ -1,6 +1,7 @@
 package com.example.miniphotoshop;
 import android.Manifest;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -15,29 +16,43 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
-import android.view.SubMenu;
 import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.net.URL;
 import java.util.ArrayList;
+
+import static java.lang.System.exit;
+
 //
 public class MainActivity extends AppCompatActivity {
-    final static int SAVE = 0, LOAD = 1;
+
+    final static int SAVE = 0, LOAD = 1, POST = 2;
+    private final String SERVER_URL = "http://jang.anymobi.kr/android/myinfo.php";
+
     private DrawView mDrawView;
     public static float mStrokeWidth = 5;
     public static int mStrokeColor = Color.BLACK;
     public static int mBackColor = Color.WHITE;
+    String myName = "윤성렬";
+    int myAge = 34;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,8 +71,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        menu.add(0, SAVE, 0, "저장하기");
-        menu.add(0, LOAD, 0, "불러오기");
+        menu.add(0, SAVE, 0, "Save Canvas");
+        menu.add(0, LOAD, 0, "Load Canvas");
+        menu.add(0, POST, 0, "Post");
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -71,12 +87,80 @@ public class MainActivity extends AppCompatActivity {
             case LOAD:
                 //loadPicture();
                 loadData();
+            case POST:
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        postData();
+                    }
+                }).start();
                 break;
         }
         return super.onOptionsItemSelected(item);
     }
 
-    //https://hrhdev.tistory.com/134
+
+    void postData() {
+        String requestPOST = SERVER_URL + "?name=" +myName;//+ "&" + "age=" + myAge;
+        URL url = null;
+        BufferedReader input = null;
+        String line = "";
+
+        try {
+            url = new URL(requestPOST);
+            InputStreamReader isr = new InputStreamReader(url.openStream());
+            input = new BufferedReader(isr);
+
+            while ((line = input.readLine()) != null) {
+                System.out.println(line);
+                Log.d("Received Data", line);
+                final String finalLine = line;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        try {
+                            JSONObject jsonObject = new JSONObject(finalLine);
+                            JSONObject response = jsonObject.getJSONObject("response");
+                            String result = response.getString("action_result");
+                            String reason = response.getString("action_failure_reason");
+                            if (result.equals("failure")) {
+                                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                                builder.setTitle("실패")
+                                        .setMessage(reason);
+                                builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        exit(0);
+//                                        finish();
+//                                        android.os.Process.killProcess(android.os.Process.myPid());
+                                    }
+                                });
+                                AlertDialog dialog = builder.create();
+                                dialog.show();
+
+                                return;
+                            } else {
+                                JSONObject content = jsonObject.getJSONObject("content");
+                                String name = content.getString("name");
+                                String age = content.getString("age");
+                                Toast.makeText(MainActivity.this, "Name: " + name + " Age: " + age, Toast.LENGTH_SHORT).show();
+                            }
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+            }
+            input.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
     private  void saveData(){
         try{
             FileOutputStream fos = openFileOutput("picture.txt",Context.MODE_PRIVATE);
@@ -123,8 +207,6 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
-
-
 
     private void savePicture() {
 
