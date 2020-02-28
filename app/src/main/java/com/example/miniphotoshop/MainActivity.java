@@ -86,12 +86,9 @@ public class MainActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case SAVE:
                 savePicture();
-//                saveData();
                 break;
             case LOAD:
                 loadPicture();
-
-//                loadData();
                 break;
             case POST_SUCCESS:
                 new Thread(new Runnable() {
@@ -179,40 +176,8 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-
-    private void saveData() {
-        try {
-            FileOutputStream fos = openFileOutput("picture.txt", Context.MODE_PRIVATE);
-            ObjectOutputStream oos = new ObjectOutputStream(fos);
-            oos.writeObject(mDrawView.pointList);
-            oos.close();
-            Toast.makeText(this, "저장  성공", Toast.LENGTH_SHORT).show();
-
-        } catch (Exception e) {
-            Log.e("canvas", e.getMessage());
-            Toast.makeText(this, "저장 실패", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void loadData() {
-        try {
-            FileInputStream fis = openFileInput("picture.txt");
-            ObjectInputStream ois = new ObjectInputStream(fis);
-            ArrayList<DrawView.Point> readObject = (ArrayList<DrawView.Point>) ois.readObject();
-            mDrawView.pointList = readObject;
-            mDrawView.invalidate();
-            Toast.makeText(this, "불러오기 성공", Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            Log.i("canvas", e.getMessage());
-            Toast.makeText(this, "불러오기 실패", Toast.LENGTH_SHORT).show();
-        }
-
-
-    }
-
     private void loadPicture() {
         isLoad = true;
-//        getApplicationContext().getDataDir().getAbsolutePath();
         File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
         filename = dir + "/my.png";
         Bitmap bm = BitmapFactory.decodeFile(filename).copy(Bitmap.Config.ARGB_8888, true);
@@ -264,8 +229,6 @@ public class MainActivity extends AppCompatActivity {
                     String path = data.getDataString();
                     Log.i("canvas", path);
                     Toast.makeText(this, path, Toast.LENGTH_SHORT).show();
-//                    String fileName = "/"+System.currentTimeMillis()+".png";
-//                    mDrawView.draw(new Canvas(bm));
                 } catch (Exception e) {
                     Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
@@ -302,7 +265,6 @@ public class MainActivity extends AppCompatActivity {
                 }
                 this.bm = bm;
                 canvas.drawBitmap(bm, 0, 0, null);
-//                bm.recycle();
             } catch (Exception e){
                 Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
             }
@@ -370,7 +332,7 @@ public class MainActivity extends AppCompatActivity {
                 this.mStrokeColor = mStrokeColor;
                 this.mStrokeWidth = mStrokeWidth;
             }
-        }//end class Point
+        }
     }
 }
 
