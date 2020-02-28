@@ -319,7 +319,6 @@ public class MainActivity extends AppCompatActivity {
                 loadBitmap(canvas);
                 isLoadBitmap = false;
             } else {
-//                loadBitmap(canvas);// 보류 테스 중\
                 if(bm != null) canvas.drawBitmap(bm,0,0,null);
                 if (pointList.size() < 2) {
                     return;
