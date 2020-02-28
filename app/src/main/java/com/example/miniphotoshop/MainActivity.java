@@ -320,7 +320,7 @@ public class MainActivity extends AppCompatActivity {
                 loadBitmap(canvas);
                 isLoadBitmap = false;
             } else {
-//                loadBitmap(canvas);// 보류 테스 중
+                loadBitmap(canvas);// 보류 테스 중
                 if (pointList.size() < 2) {
                     return;
                 }
