@@ -66,8 +66,6 @@ public class MainActivity extends AppCompatActivity {
         int permissionCheck = ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
         if (permissionCheck == PackageManager.PERMISSION_DENIED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, MODE_PRIVATE);
-        } else {
-//            sdcardProcess();
         }
         setContentView(mDrawView);
     }
