@@ -211,15 +211,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadPicture() {
-
-//        Intent intent = new Intent();
-//        intent.setType("image/*");
-//        intent.setAction(Intent.ACTION_GET_CONTENT);
-//        startActivityForResult(intent, 1);
         isLoad = true;
+//        getApplicationContext().getDataDir().getAbsolutePath();
         File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
         filename = dir + "/my.png";
-//        Bitmap bm = BitmapFactory.decodeFile(filename).copy(Bitmap.Config.ARGB_8888, true);
+        Bitmap bm = BitmapFactory.decodeFile(filename).copy(Bitmap.Config.ARGB_8888, true);
         Log.d("canvas", dir + "/my.png");
         try {
             Toast.makeText(this, "불러오기 성공", Toast.LENGTH_SHORT).show();
@@ -283,6 +279,8 @@ public class MainActivity extends AppCompatActivity {
         boolean isLoadBitmap = false;
         public ArrayList<Point> pointList = new ArrayList<MainActivity.DrawView.Point>();
         private String filename;
+        Bitmap bm;
+
 
         public DrawView(Context context) {
             super(context);
@@ -298,12 +296,13 @@ public class MainActivity extends AppCompatActivity {
             try {
                 if(filename == null) return;
                 Bitmap bm = BitmapFactory.decodeFile(filename);
-                if(bm == null) Log.i("canvas","bm is null"+ filename);
-                Paint paint = new Paint();
-                paint.setColor(mStrokeColor);
-                paint.setStrokeWidth(mStrokeWidth);
-                canvas.drawBitmap(bm, 0, 0, paint);
-                bm.recycle();
+                if(bm == null) {
+                    Log.i("canvas","bm is null"+ filename);
+                    return;
+                }
+                this.bm = bm;
+                canvas.drawBitmap(bm, 0, 0, null);
+//                bm.recycle();
             } catch (Exception e){
                 Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
             }
@@ -320,7 +319,8 @@ public class MainActivity extends AppCompatActivity {
                 loadBitmap(canvas);
                 isLoadBitmap = false;
             } else {
-                loadBitmap(canvas);// 보류 테스 중
+//                loadBitmap(canvas);// 보류 테스 중\
+                if(bm != null) canvas.drawBitmap(bm,0,0,null);
                 if (pointList.size() < 2) {
                     return;
                 }
